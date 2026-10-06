@@ -1,0 +1,43 @@
+# Merge these fragments into your Backstage app-config.yaml.
+# Paths are relative to packages/backend/ in a standard create-app layout.
+
+catalog:
+  rules:
+    - allow: [Component, System, API, Resource, Location, Template, Group]
+  locations:
+    # Golden-path templates shipped with this repo (local dev)
+    - type: file
+      target: ../../templates/service-node/template.yaml
+      rules:
+        - allow: [Template]
+    # Once pushed to GitHub, switch to the URL form for shared environments:
+    # - type: url
+    #   target: https://raw.githubusercontent.com/<org>/idp-golden-path/main/templates/service-node/template.yaml
+    #   rules:
+    #     - allow: [Template]
+
+    # Demo org data so the OwnerPicker has something to pick.
+    # In production this comes from your identity provider / LDAP sync.
+    - type: file
+      target: ../../backstage/org.yaml
+      rules:
+        - allow: [Group, User]
+
+integrations:
+  github:
+    - host: github.com
+      token: ${GITHUB_TOKEN} # classic PAT with repo + workflow scopes, or a GitHub App
+
+auth:
+  providers:
+    # {} is enough to enable the guest provider (development only — the
+    # provider refuses to run in production unless you flip the flag below).
+    guest: {}
+    # To share the guest sign-in in a non-development environment:
+    # guest:
+    #   dangerouslyAllowOutsideDevelopment: true
+
+app:
+  title: Golden Path IDP
+  support:
+    url: https://github.com/<org>/idp-golden-path

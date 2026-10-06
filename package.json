@@ -1,0 +1,14 @@
+{
+  "name": "idp-golden-path",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Internal Developer Platform starter: Backstage templates, golden-path CI, Terraform modules, GitOps readiness",
+  "scripts": {
+    "test": "node scripts/render-test.mjs",
+    "test:terraform": "bash scripts/terraform-test.sh"
+  },
+  "devDependencies": {
+    "nunjucks": "^3.2.4"
+  }
+}

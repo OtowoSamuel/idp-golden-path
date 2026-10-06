@@ -1,0 +1,35 @@
+# Require golden-path labels on every workload.
+# Generated services already carry these labels (see deploy/base/deployment.yaml),
+# so they pass automatically — the policy exists to stop services created
+# outside the template from reaching the cluster unowned.
+#
+# Kyverno >= 1.18: Kubernetes-native CEL ValidatingPolicy.
+# The legacy kyverno.io/v1 ClusterPolicy is deprecated as of Kyverno 1.19
+# (August 2026) and removed in 1.20 (November 2026) — do not use it for new work.
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-service-labels
+  annotations:
+    policies.kyverno.io/title: Require Service Labels
+    policies.kyverno.io/category: IDP Golden Path
+    policies.kyverno.io/description: >-
+      Workloads must carry app.kubernetes.io/name and team labels so that
+      ownership is discoverable on the cluster, not only in the catalog.
+spec:
+  validationActions:
+    - Deny
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments, statefulsets, daemonsets]
+  validations:
+    - expression: >-
+        has(object.metadata.labels) &&
+        'app.kubernetes.io/name' in object.metadata.labels &&
+        'team' in object.metadata.labels
+      message: >-
+        Workloads must be labeled with app.kubernetes.io/name and team.
+        Create services through the IDP template to get compliant defaults.

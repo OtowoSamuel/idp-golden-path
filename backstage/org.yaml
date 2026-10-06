@@ -1,0 +1,27 @@
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: platform
+  description: Platform team — maintainers of the golden path
+spec:
+  type: team
+  members: []
+  parent: everyone
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: payments
+  description: Payments squad
+spec:
+  type: team
+  members: []
+  parent: everyone
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: everyone
+spec:
+  type: team
+  members: []

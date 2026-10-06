@@ -1,0 +1,21 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.service_name }}
+  description: ${{ values.description | dump }}
+  annotations:
+    github.com/project-slug: ${{ values.destination.owner + "/" + values.destination.repo }}
+    backstage.io/techdocs-ref: dir:.
+    backstage.io/kubernetes/id-selector: ${{ values.service_name }}
+  links:
+    - url: https://github.com/${{ values.destination.owner }}/${{ values.destination.repo }}/actions
+      title: Pipeline
+      icon: github
+    - url: https://github.com/${{ values.destination.owner }}/${{ values.destination.repo }}
+      title: Repository
+      icon: github
+spec:
+  type: service
+  lifecycle: experimental
+  owner: ${{ values.owner | dump }}
+  system: default
