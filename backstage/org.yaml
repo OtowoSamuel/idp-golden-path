@@ -7,6 +7,7 @@ spec:
   type: team
   members: []
   parent: everyone
+  children: []
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Group
@@ -17,6 +18,7 @@ spec:
   type: team
   members: []
   parent: everyone
+  children: []
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Group
@@ -25,3 +27,6 @@ metadata:
 spec:
   type: team
   members: []
+  children:
+    - platform
+    - payments

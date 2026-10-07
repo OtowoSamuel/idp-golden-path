@@ -58,7 +58,7 @@ idp-golden-path/
 │   └── observability-baseline/   # log group + 5xx alarm
 ├── backstage/                    # app-config fragments + run guide
 ├── policies/                     # Kyverno: enforce service labels
-├── docs/                         # architecture + decision log
+├── docs/                         # architecture, decision log, build log, rebuild guide, article
 └── scripts/                      # render test + terraform test runner
 ```
 

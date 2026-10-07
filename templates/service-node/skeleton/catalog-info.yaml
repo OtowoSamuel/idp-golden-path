@@ -6,7 +6,7 @@ metadata:
   annotations:
     github.com/project-slug: ${{ values.destination.owner + "/" + values.destination.repo }}
     backstage.io/techdocs-ref: dir:.
-    backstage.io/kubernetes/id-selector: ${{ values.service_name }}
+    backstage.io/kubernetes-id: ${{ values.service_name }}
   links:
     - url: https://github.com/${{ values.destination.owner }}/${{ values.destination.repo }}/actions
       title: Pipeline
