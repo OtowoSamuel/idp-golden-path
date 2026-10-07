@@ -321,7 +321,7 @@ cosign verify ghcr.io/otowosamuel/payments-api@sha256:db872661… \
 | `kubectl kustomize render-output/.../deploy/overlays/dev` | builds |
 | YAML duplicate-key sweep (project + rendered) | 21 docs clean |
 | Docker build + run | `/health` 200, non-root `app`, HEALTHCHECK works |
-| Git | `main` @ `075fc1d`, clean tree, 48 files |
+| Git | `main` @ `26cf1f2`, clean tree, 61 files |
 | Dependency currency | audited vs Oct 5, 2026 releases; Actions SHA-pinned |
 | Live GitHub CI (demo repo `OtowoSamuel/payments-api`) | run #1 green in 1m 4s: lint 13s, build-sign-push 44s (Cosign sign + verify) |
 | `cosign verify` from a laptop (outside CI) | claims + transparency log + certificate all verified |
@@ -331,5 +331,5 @@ cosign verify ghcr.io/otowosamuel/payments-api@sha256:db872661… \
 ## Known limitations (documented in README §7)
 
 - No CI workflow in *this* repo yet (Docker verified locally instead)
-- Second template (Python), `ImageValidatingPolicy`, GitHub auth, demo assets:
+- Second template (Python), `ImageValidatingPolicy`, GitHub auth:
   deliberate scope cuts — rationale in `docs/decision-log.md` §8

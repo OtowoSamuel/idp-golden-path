@@ -142,13 +142,21 @@ Full log in [docs/decision-log.md](docs/decision-log.md). The short version:
 
 ## 8. Demo
 
-Screenshots / short Loom to be recorded at publication time:
+Nine images are committed under `docs/assets/` (2x resolution), captured from the
+live systems — checklist for the article is in `docs/medium-article.md`:
 
-1. Backstage **Create** form → filled in → 3 steps green (~2 min).
-2. New GitHub repo with golden-path structure.
-3. GitHub Actions run: green lint/test, image built, `cosign sign` output.
-4. Catalog entry: owner, pipeline link, repository link.
-5. `kubectl kustomize deploy/overlays/dev` output (compliant labels).
+| Shot | File | Shows |
+|---|---|---|
+| Cover | `assets/cover.png` | article cover |
+| Architecture | `assets/architecture.png` (+ `architecture-aws.png`) | the flow, mermaid + AWS style |
+| Create list | `assets/screenshots/backstage-create.png` | golden-path template card in Backstage |
+| Template form | `assets/screenshots/backstage-form.png` | three fields → a golden repo |
+| Catalog | `assets/screenshots/backstage-catalog.png` | generated `payments-api` with owner/system |
+| Repo | `assets/screenshots/github-repo.png` | pushed repo, green initial commit |
+| CI run | `assets/screenshots/github-actions-run.png` | lint + build-sign-push green in 1m 4s |
+| Health | `assets/screenshots/service-health.png` | generated service serving `/health` |
+
+Live demo steps (Backstage + demo repo + cosign receipt): `docs/rebuild-guide.md` Step 10.
 
 ---
 

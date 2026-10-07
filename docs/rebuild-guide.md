@@ -4,12 +4,14 @@ Rebuild this project from an empty folder. This file tells you **where to go,
 what to use, and when you're done** at every step. It does not contain code —
 it points you at the right places.
 
-## How to use these three docs
+## How to use these docs
 
 | Doc | Role |
 |---|---|
 | `README.md` + `docs/decision-log.md` | **Spec** — what each piece must do and why it's built that way |
 | `docs/build-log.md` | **Map** — build order context, every pitfall you'll hit (numbered), and fixes |
+| `docs/medium-article.md` | **Story** — the publishable narrative + image placement checklist |
+| This guide (`docs/rebuild-guide.md`) | **Recipe** — ordered steps with gates; Step 10 is the live demo |
 | The committed repo (git) | **Answer key** — open a file only when stuck; don't copy wholesale |
 
 Work in order. Every step ends with a **gate** — a command that must pass
