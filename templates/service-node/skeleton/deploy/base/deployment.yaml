@@ -6,6 +6,7 @@ metadata:
     app.kubernetes.io/name: ${{ values.service_name }}
     app.kubernetes.io/part-of: ${{ values.service_name }}
     app.kubernetes.io/managed-by: kustomize
+    team: ${{ values.team_label }}
 spec:
   replicas: 1
   selector:
@@ -24,11 +25,13 @@ spec:
       serviceAccountName: ${{ values.service_name }}
       securityContext:
         runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: ${{ values.service_name }}
-          image: ghcr.io/${{ values.destination.owner }}/${{ values.destination.repo }}:latest
+          image: ghcr.io/${{ values.destination.owner | lower }}/${{ values.destination.repo | lower }}:latest
           ports:
             - name: http
               containerPort: 8080

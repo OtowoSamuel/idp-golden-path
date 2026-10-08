@@ -11,7 +11,7 @@ it points you at the right places.
 | `README.md` + `docs/decision-log.md` | **Spec** — what each piece must do and why it's built that way |
 | `docs/build-log.md` | **Map** — build order context, every pitfall you'll hit (numbered), and fixes |
 | `docs/medium-article.md` | **Story** — the publishable narrative + image placement checklist |
-| This guide (`docs/rebuild-guide.md`) | **Recipe** — ordered steps with gates; Step 10 is the live demo |
+| This guide (`docs/rebuild-guide.md`) | **Recipe** — ordered steps with gates; Steps 10–11 are the live demos (GitHub CI, then full AWS E2E) |
 | The committed repo (git) | **Answer key** — open a file only when stuck; don't copy wholesale |
 
 Work in order. Every step ends with a **gate** — a command that must pass
@@ -277,6 +277,52 @@ owner, CI run green, `cosign verify` passes from outside CI.
 
 ---
 
+## Step 11 — Live on AWS (optional): the full path on a real cluster
+
+Everything so far is real but not yet *running*. This step stands up EKS, Argo CD,
+Kyverno, and Terraform, and converges the generated service. Full detail + the six
+issues it surfaced: build log Phase 7 (issues 32–37).
+
+```bash
+# 1. Cluster (~5–15 min). Needs eksctl + AWS creds.
+eksctl create cluster --name golden-path-demo --region us-east-1 \
+  --nodegroup-name workers --node-type t3.medium --nodes 2 --with-oidc
+
+# 2. Argo CD. The common install bundle ships no Namespace — create it first (issue 36).
+kubectl create ns argocd
+kubectl apply -n argocd -f <argocd-install.yaml>   # e.g. pinned argocd-install.yaml
+kubectl -n argocd rollout status deploy/argocd-server
+
+# 3. Kyverno. CRDs exceed the 256KiB client-side annotation cap — server-side apply (issue 37).
+kubectl apply --server-side -f https://github.com/kyverno/kyverno/releases/download/v1.19.1/install.yaml
+kubectl apply -f policies/kyverno-require-labels.yaml
+kubectl wait -n kyverno --for=condition=Ready vpol/require-service-labels --timeout=60s
+
+# 4. Terraform for real. Mocks can't see AWS semantics (issue 32 — lifecycle priority).
+terraform -chdir=<scratch-dir> init
+terraform -chdir=<scratch-dir> apply -var service_name=payments-api -var environment=dev -auto-approve
+
+# 5. Register the app with Argo CD. First sync may be denied by our own policy (issue 33)
+#    until the skeleton is fixed in the REPO (the golden path way — fix forward, don't kubectl-edit):
+#      - team label on Deployment metadata (issue 33)
+#      - lowercase ghcr image (issue 34)
+#      - numeric runAsUser (issue 35)
+#      - Service type LoadBalancer (for a public /health endpoint)
+kubectl apply -f https://raw.githubusercontent.com/<you>/payments-api/deploy/argocd/application-dev.yaml
+watch kubectl -n argocd get applications payments-api-dev
+
+# 6. Prove the gate end to end. Bare Pods bypass the policy — it matches controllers only.
+kubectl -n dev create deployment rogue --image=nginx     # DENIED — the whole point
+kubectl -n dev get all                                    # deployed service pods Running
+```
+
+**Gate**: `payments-api-dev` is **Synced + Healthy** in Argo CD, the unlabeled Deployment is
+**denied** by Kyverno, and `curl http://<elb-dns>/health` returns `{"status":"ok"}`.
+If DNS is slow on the LoadBalancer, retry after ~60s. Screenshot examples live in
+`docs/assets/screenshots/live/`.
+
+---
+
 ## Verification cheat sheet
 
 | Stage | Command | Pass looks like |
@@ -288,3 +334,5 @@ owner, CI run green, `cosign verify` passes from outside CI.
 | Policy/config | YAML duplicate-key sweep | 0 errors |
 | Image (optional) | `docker build` + `curl /health` | `{"status":"ok"}` |
 | Live demo (optional) | GitHub Actions run + `cosign verify` | green run, verify passes |
+| E2E on AWS (optional) | `kubectl -n argocd get applications` + `curl <elb>/health` | Synced + Healthy, `{"status":"ok"}` |
+| Policy (optional) | `kubectl -n dev create deployment rogue --image=nginx` | denied by Kyverno vpol |

@@ -156,7 +156,13 @@ live systems — checklist for the article is in `docs/medium-article.md`:
 | CI run | `assets/screenshots/github-actions-run.png` | lint + build-sign-push green in 1m 4s |
 | Health | `assets/screenshots/service-health.png` | generated service serving `/health` |
 
+The **live deployment set** (EKS `golden-path-demo`, us-east-1, real Argo CD +
+Kyverno + Terraform apply) is in `docs/assets/screenshots/live/` — 8 shots covering
+the public LoadBalancer `/health`, the Argo app Synced + Healthy, Kyverno deny/allow,
+the real AWS resources, cluster runtime, and a fresh Backstage create + catalog.
+
 Live demo steps (Backstage + demo repo + cosign receipt): `docs/rebuild-guide.md` Step 10.
+Full AWS E2E (cluster → policy → GitOps → public `/health`): Step 11.
 
 ---
 

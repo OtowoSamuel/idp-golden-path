@@ -25,6 +25,14 @@ spec:
         apiVersions: [v1]
         operations: [CREATE, UPDATE]
         resources: [deployments, statefulsets, daemonsets]
+  # Platform namespaces are not built from the IDP template — exempt them
+  # so platform upgrades (Argo CD, Kyverno itself) are never blocked by
+  # app-team labeling rules. Without this, the policy gates its own
+  # control plane (build-log issue 38).
+  matchConditions:
+    - name: exclude-platform-namespaces
+      expression: >-
+        !(object.metadata.namespace in ['argocd', 'kyverno', 'kube-system'])
   validations:
     - expression: >-
         has(object.metadata.labels) &&
