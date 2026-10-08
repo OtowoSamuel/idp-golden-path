@@ -139,4 +139,4 @@ The pipeline that ran on that push: lint and unit tests first, then build → Co
 
 ---
 
-*Source: https://github.com/OtowoSamuel/payments-api — Rebuild guide and full build log included. Built as Project 2 of a platform-engineering portfolio; Project 1 (GitOps + policy + supply chain) is the delivery engine underneath.*
+*Source: https://github.com/OtowoSamuel/idp-golden-path — rebuild guide and full build log included; the generated demo service lives at https://github.com/OtowoSamuel/payments-api. Built as Project 2 of a platform-engineering portfolio; Project 1 (GitOps + policy + supply chain) is the delivery engine underneath.*
