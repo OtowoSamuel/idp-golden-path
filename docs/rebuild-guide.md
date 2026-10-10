@@ -1,21 +1,19 @@
 # Rebuild Guide — Step-by-Step
 
-Rebuild this project from an empty folder. This file tells you **where to go,
-what to use, and when you're done** at every step. It does not contain code —
-it points you at the right places.
+This guide reconstructs the IDP Golden Path from scratch. It points you at the
+right places and tells you when you're done. No code — just directions.
 
 ## How to use these docs
 
-| Doc | Role |
+| Doc | What it is |
 |---|---|
-| `README.md` + `docs/decision-log.md` | **Spec** — what each piece must do and why it's built that way |
-| `docs/build-log.md` | **Map** — build order context, every pitfall you'll hit (numbered), and fixes |
-| `docs/medium-article.md` | **Story** — the publishable narrative + image placement checklist |
-| This guide (`docs/rebuild-guide.md`) | **Recipe** — ordered steps with gates; Steps 10–11 are the live demos (GitHub CI, then full AWS E2E) |
-| The committed repo (git) | **Answer key** — open a file only when stuck; don't copy wholesale |
+| `README.md` + `docs/decision-log.md` | The spec — what each piece does and why |
+| `docs/build-log.md` | The map — every pitfall you'll hit and how to fix it |
+| `docs/medium-article.md` | The story — the publishable narrative + image checklist |
+| This guide (`docs/rebuild-guide.md`) | The recipe — ordered steps with checkpoints |
+| The committed repo (git) | The answer key — open a file only when stuck; don't copy wholesale |
 
-Work in order. Every step ends with a **gate** — a command that must pass
-before moving on.
+Work in order. Every step ends with a **checkpoint** — a command that should pass before moving on.
 
 ---
 
@@ -283,40 +281,7 @@ Everything so far is real but not yet *running*. This step stands up EKS, Argo C
 Kyverno, and Terraform, and converges the generated service. Full detail + the six
 issues it surfaced: build log Phase 7 (issues 32–37).
 
-```bash
-# 1. Cluster (~5–15 min). Needs eksctl + AWS creds.
-eksctl create cluster --name golden-path-demo --region us-east-1 \
-  --nodegroup-name workers --node-type t3.medium --nodes 2 --with-oidc
-
-# 2. Argo CD. The common install bundle ships no Namespace — create it first (issue 36).
-kubectl create ns argocd
-kubectl apply -n argocd -f <argocd-install.yaml>   # e.g. pinned argocd-install.yaml
-kubectl -n argocd rollout status deploy/argocd-server
-
-# 3. Kyverno. CRDs exceed the 256KiB client-side annotation cap — server-side apply (issue 37).
-kubectl apply --server-side -f https://github.com/kyverno/kyverno/releases/download/v1.19.1/install.yaml
-kubectl apply -f policies/kyverno-require-labels.yaml
-kubectl wait -n kyverno --for=condition=Ready vpol/require-service-labels --timeout=60s
-
-# 4. Terraform for real. Mocks can't see AWS semantics (issue 32 — lifecycle priority).
-terraform -chdir=<scratch-dir> init
-terraform -chdir=<scratch-dir> apply -var service_name=payments-api -var environment=dev -auto-approve
-
-# 5. Register the app with Argo CD. First sync may be denied by our own policy (issue 33)
-#    until the skeleton is fixed in the REPO (the golden path way — fix forward, don't kubectl-edit):
-#      - team label on Deployment metadata (issue 33)
-#      - lowercase ghcr image (issue 34)
-#      - numeric runAsUser (issue 35)
-#      - Service type LoadBalancer (for a public /health endpoint)
-kubectl apply -f https://raw.githubusercontent.com/<you>/payments-api/deploy/argocd/application-dev.yaml
-watch kubectl -n argocd get applications payments-api-dev
-
-# 6. Prove the gate end to end. Bare Pods bypass the policy — it matches controllers only.
-kubectl -n dev create deployment rogue --image=nginx     # DENIED — the whole point
-kubectl -n dev get all                                    # deployed service pods Running
-```
-
-**Gate**: `payments-api-dev` is **Synced + Healthy** in Argo CD, the unlabeled Deployment is
+Checkpoint: `payments-api-dev` is **Synced + Healthy** in Argo CD, the unlabeled Deployment is
 **denied** by Kyverno, and `curl http://<elb-dns>/health` returns `{"status":"ok"}`.
 If DNS is slow on the LoadBalancer, retry after ~60s. Screenshot examples live in
 `docs/assets/screenshots/live/`.

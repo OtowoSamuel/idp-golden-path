@@ -1,4 +1,4 @@
-# The Golden Path Is a Repository: How I Built an Internal Developer Platform Starter
+`The Golden Path Is a Repository: How I Built an Internal Developer Platform Starter
 
 <!--
 PUBLISHING CHECKLIST (Medium doesn't import local images — upload manually):
@@ -12,6 +12,14 @@ PUBLISHING CHECKLIST (Medium doesn't import local images — upload manually):
 7. assets/screenshots/backstage-create.png → Decision 1, first shot
 8. assets/screenshots/backstage-form.png → Decision 1, second shot
 9. assets/screenshots/backstage-catalog.png → after "unowned service is an unmanaged service"
+10. assets/screenshots/live/live-health-url.png → public /health endpoint on ELB
+11. assets/screenshots/live/live-argo-app.png → Argo CD: payments-api-dev Synced + Healthy
+12. assets/screenshots/live/live-kyverno-deny.png → unlabeled Deployment denied by Kyverno
+13. assets/screenshots/live/live-kyverno-allow.png → labeled Deployment admitted by Kyverno
+14. assets/screenshots/live/live-aws-resources.png → ECR repo + log group + 5xx alarm (terraform)
+15. assets/screenshots/live/live-cluster-runtime.png → cluster runtime with deployed image
+16. assets/screenshots/live/live-backstage-create.png → Backstage create → template card
+17. assets/screenshots/live/live-backstage-catalog.png → catalog ingests generated payments-api
 -->
 
 *Every platform team eventually writes the same onboarding doc: "create a repo, add a Dockerfile, wire up CI, add these labels…" — and every new service ignores half of it. I built a starter that turns that doc into a portal click.*

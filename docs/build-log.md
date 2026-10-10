@@ -314,59 +314,55 @@ cosign verify ghcr.io/otowosamuel/payments-api@sha256:db872661… \
 
 ## Phase 7 — Live on AWS (EKS `golden-path-demo`)
 
-Everything up to Phase 6 was real CI on real GitHub, but the cluster side was
-manifests-only. Phase 7 deployed the whole golden path onto a real EKS cluster
-in the author's account (`050083686295`, us-east-1) — Argo CD v3.2.1, Kyverno
-v1.19.1, both Terraform modules applied for real, and the generated
-`payments-api` running behind an AWS LoadBalancer. It also found six more
-issues — half of them invisible to every test in the repo, because mocks and
-kustomize renders don't talk to AWS or Kubernetes admission.
+The whole path became real in this phase. Up to Phase 6 everything was real CI on real GitHub, but the cluster side was just manifests. Phase 7 deployed everything onto a real EKS cluster in the author's account (`050083686295`, us-east-1) — Argo CD v3.2.1, Kyverno v1.19.1, both Terraform modules applied for real, and the generated `payments-api` running behind an AWS LoadBalancer. It also found six more issues — half of them invisible to every test in the repo, because mocks and kustomize renders don't talk to AWS or Kubernetes admission.
 
-| # | Issue | Resolution |
-|---|-------|------------|
-| 32 | `terraform apply` failed: `Lifecycle policy validation failure: Rule for tagStatus=ANY must have the lowest priority per storage class` | AWS requires the catch-all `tagStatus: any` rule to carry the **highest** priority *number* (evaluated last). The module had `any` at priority 1. Mock-provider tests can't see this — they never call `PutLifecyclePolicy`. Swapped the rule order in `service-baseline`. Real-AWS validation > mock coverage. |
-| 33 | Argo's first sync was **denied by our own policy**: `vpol.validate.kyverno.svc-fail … Workloads must be labeled with app.kubernetes.io/name and team` | The policy checks `object.metadata.labels` on the Deployment; the skeleton only put `team` on the **pod template** labels. The policy file even claimed generated services "pass automatically" — they didn't. Fixed the skeleton (team on Deployment metadata) and pushed to the demo repo. Governance-by-construction demoed accidentally: the platform blocked its own non-compliant output until the template was honest. |
-| 34 | Pod stuck `InvalidImageName` — `repository name (OtowoSamuel/payments-api) must be lowercase` | GHCR (like Docker Hub) requires all-lowercase image references; the template rendered the GitHub login verbatim while CI lowercases the actual push (`${GITHUB_REPOSITORY,,}`). Skeleton now pipes owner/repo through nunjucks `| lower`. |
-| 35 | Pod stuck `CreateContainerConfigError` — `runAsNonRoot and image has non-numeric user (app), cannot verify user is non-root` | kubelet can't prove a named `USER app` is non-root. Added `runAsUser/runAsGroup: 10001` to the pod securityContext (image keeps its named user for humans). |
-| 36 | Custom Argo CD `install.yaml` (no Namespace resource) dumped the entire stack into `default` | Deleted by manifest identity, created `argocd` ns, re-applied with `kubectl apply -n argocd -f`. Rule of thumb: audit third-party bundles for `kind: Namespace` before applying. |
-| 37 | Kyverno install failed: `metadata.annotations: Too long: may not be more than 262144 bytes` on three CRDs | Classic kubectl-client-side-apply limit: the `last-applied-configuration` annotation overflows on large CRDs. Fix (documented upstream): `kubectl apply --server-side -f …`. |
+**What we found:**
 
-Proof points captured (all in `docs/assets/screenshots/live/`, 2x):
-public `/health` on the ELB; Argo CD UI showing `payments-api-dev` **Synced +
-Healthy** against `github.com/OtowoSamuel/payments-api`; Kyverno deny + allow
-side-by-side; real ECR repo / log group / 5xx alarm from `terraform apply`;
-cluster runtime with the deployed image digest; fresh Backstage create + catalog.
-All four demo-repo commits from this phase (team label, lowercase image,
-numeric runAsUser, LoadBalancer) went through the golden-path CI green —
-including cosign sign — before Argo was allowed to converge.
+- **ECR lifecycle priority** (issue 32): `tagStatus: any` must carry the highest priority number per storage class. Mock-provider tests can't see this — they never call `PutLifecyclePolicy`. Swapped the rule order in `service-baseline`. Real-AWS validation > mock coverage.
 
-One nuance worth keeping: the deny proof must use a **Deployment**, not
-`kubectl run` — the policy matches controllers (`deployments/statefulsets/daemonsets`),
-and a bare Pod sails through. Bare pods bypassing controller policies is exactly
-why platforms also schedule everything via Deployments.
+- **Our own policy blocked our template** (issue 33): The policy checks `object.metadata.labels` on the Deployment; the skeleton only put `team` on the pod template labels. The policy file even claimed generated services "pass automatically" — they didn't. Fixed the skeleton (team on Deployment metadata) and pushed to the demo repo. Governance‑by‑construction: the platform blocked its own non-compliant output until the template was honest.
+
+- **GHCR requires lowercase** (issue 34): Image names must be all‑lowercase; the template rendered the GitHub login verbatim while CI lowercases the actual push (`${GITHUB_REPOSITORY,,}`). Skeleton now pipes owner/repo through nunjucks `| lower`.
+
+- **`runAsNonRoot` with named `USER app`** (issue 35): kubelet can't prove a named `USER app` is non‑root. Added `runAsUser/runAsGroup: 10001` to the pod securityContext (image keeps its named user for humans).
+
+- **Argo CD `install.yaml` had no Namespace** (issue 36): The common bundle ships no `kind: Namespace` resource — resources landed in `default`. Deleted by manifest identity, created `argocd` ns, re‑applied with `kubectl apply -n argocd -f`. Rule of thumb: audit third‑party bundles for `kind: Namespace` before applying.
+
+- **Kyverno install CRD annotation overflow** (issue 37): The client‑side‑apply limit of 262144 bytes on `last-applied-configuration` annotation overflows on large CRDs. Fix (documented upstream): `kubectl apply --server-side -f …`.
+
+**Proof points captured** (all in `docs/assets/screenshots/live/`, 2× resolution):
+
+- public `/health` on the ELB → `{"status":"ok"}`
+- Argo CD UI showing `payments-api-dev` **Synced + Healthy** against `github.com/OtowoSamuel/payments-api`
+- Kyverno deny + allow side‑by‑side
+- Real ECR repo / log group / 5xx alarm from `terraform apply`
+- cluster runtime with the deployed image digest
+- fresh Backstage create + catalog
+
+All four demo‑repo commits from this phase (team label, lowercase image, numeric runAsUser, LoadBalancer) went through the golden‑path CI green — including cosign sign — before Argo was allowed to converge.
+
+One nuance: the deny proof must use a **Deployment**, not `kubectl run` — the policy matches controllers (`deployments/statefulsets/daemonsets`), and a bare Pod sails through. Bare pods bypassing controller policies is exactly why platforms also schedule everything via Deployments.
 
 ---
 
 ## Final state
 
-| Check | Result |
-|-------|--------|
-| `npm test` (render → npm ci → lint → unit tests) | 19 files, all green |
-| `npm run test:terraform` (mock provider, no creds) | 8/8 passing |
-| `kubectl kustomize render-output/.../deploy/overlays/dev` | builds |
-| YAML duplicate-key sweep (project + rendered) | 21 docs clean |
-| Docker build + run | `/health` 200, non-root `app`, HEALTHCHECK works |
-| Git | `main` (see `git log`), clean tree |
-| Dependency currency | audited vs Oct 5, 2026 releases; Actions SHA-pinned |
-| Live GitHub CI (demo repo `OtowoSamuel/payments-api`) | 6 green runs total: initial path + kubernetes-id fix + 4 Phase-7 fixes (lint → test → build → cosign sign+verify) |
-| `cosign verify` from a laptop (outside CI) | claims + transparency log + certificate all verified |
-| Backstage live (guest auth, template registered) | Create form renders, catalog ingests the generated `payments-api` with owner/system |
-| Article screenshots (2x) | 6 in `docs/assets/screenshots/`, 8 more in `.../live/`, all content-verified |
-| E2E live on AWS | EKS `golden-path-demo` (k8s 1.34, 2× t3.medium) + Argo CD v3.2.1 + Kyverno v1.19.1; app **Synced+Healthy**; public ELB `/health` → `{"status":"ok"}` |
-| Terraform applied for real | ECR `payments-api` (IMMUTABLE, scan-on-push), log group `/service/payments-api/dev`, alarm `payments-api-dev-http-5xx` (OK) |
-| Kyverno admission, proven live | unlabeled Deployment **denied**; labeled Deployment admitted; generated service passes after issue-33 fix |
+What’s in the repo at this point:
 
-## Known limitations (documented in README §7)
+- `npm test` (render → npm ci → lint → unit tests): 19 files, all green
+- `npm run test:terraform` (mock provider, no creds): 8/8 passing
+- `kubectl kustomize render-output/.../deploy/overlays/dev` builds
+- YAML duplicate‑key sweep (project + rendered): 21 docs clean
+- Docker build + run: `/health` 200, non‑root `app`, HEALTHCHECK works
+- Git: `main`, clean tree (history in GitHub)
+- Dependency currency: audited vs Oct 5, 2026 releases; Actions SHA‑pinned
+- Live GitHub CI (demo repo `OtowoSamuel/payments-api`): 6 green runs total (initial path + kubernetes‑id fix + 4 Phase‑7 fixes: lint → test → build → cosign sign+verify)
+- `cosign verify` from a laptop (outside CI): claims + transparency log + certificate all verified
+- Backstage live (guest auth, template registered): Create form renders, catalog ingests the generated `payments-api` with owner/system
+- Article screenshots (2×): 6 in `docs/assets/screenshots/`, 8 more in `.../live/`, all content‑verified
+- E2E live on AWS: EKS `golden-path-demo` (k8s 1.34, 2× t3.medium) + Argo CD v3.2.1 + Kyverno v1.19.1; app **Synced+Healthy**; public ELB `/health` → `{"status":"ok"}`
+- Terraform applied for real: ECR `payments-api` (IMMUTABLE, scan‑on‑push), log group `/service/payments-api/dev`, alarm `payments-api-dev‑http‑5xx` (OK)
+- Kyverno admission, proven live: unlabeled Deployment **denied**; labeled Deployment admitted; generated service passes after issue‑33 fix
 
 - No CI workflow in *this* repo yet (Docker verified locally instead)
 - Second template (Python), `ImageValidatingPolicy`, GitHub auth:

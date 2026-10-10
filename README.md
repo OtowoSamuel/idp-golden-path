@@ -92,53 +92,36 @@ What the generated repo already contains:
 | `src/telemetry.js` | OTel SDK, dormant until a collector endpoint exists |
 | `src/app.js` | `/health`, `/ready`, `/metrics` (Prometheus) |
 
-## 5. Design decisions & trade-offs
+## 5. Design decisions
 
-Full log in [docs/decision-log.md](docs/decision-log.md). The short version:
+The short version:
 
-- **Backstage** over Port — what job postings name; setup cost accepted.
-- **Template generates a repo, doesn't orchestrate infra** — fewer external
-  failure points; the generated repo is inspectable.
-- **Cosign keyless** — no signing keys to manage; works only from CI (fine,
-  since CI builds images).
-- **Pinned to current stable** — Node 24, SHA-pinned Actions v7, Kyverno CEL policy
-  (audited Oct 5, 2026); a "golden path" with stale pins is self-defeating.
-- **One Kyverno policy** — proves the compliance loop instead of becoming a
-  policy project.
-- **Tests need no credentials** — mock AWS provider + offline render test, so
-  anyone who clones it gets green tests.
-- **Deliberately left out**: TechDocs, multi-auth, remote state backend,
-  second language template, cluster provisioning (see decision log §8).
+- **Backstage** — chosen because job postings name it; setup cost accepted.
+- **Template generates a repo, doesn't orchestrate infra** — fewer external failure points; the generated repo is inspectable.
+- **Cosign keyless** — no signing keys to manage; works only from CI (fine, since CI builds images).
+- **Pinned to current stable** — Node 24, SHA-pinned Actions v7, Kyverno CEL policy (audited Oct 5, 2026); a "golden path" with stale pins is self-defeating.
+- **One Kyverno policy** — proves the compliance loop instead of becoming a policy project.
+- **Tests need no credentials** — mock AWS provider + offline render test, so anyone who clones it gets green tests.
+- **Left out**: TechDocs, multi-auth, remote state backend, second language template, cluster provisioning (see decision log).
 
-## 6. Measurable results
+## 6. What works
 
-| Metric | Value |
-|---|---|
-| New service → working repo + signed pipeline | **< 15 minutes** (portal click → first green run) |
-| Generated services with Cosign signing | **100%** — signing lives in the template's workflow |
-| Generated services with ownership in catalog | **100%** — `catalog-info.yaml` is rendered, never hand-written |
-| Reusable Terraform modules (validated + tested) | **2** — `service-baseline`, `observability-baseline` |
-| Terraform test runs (offline, mocked) | **8 passing** |
-| Template render test (offline) | **19 files rendered, lint + 3 unit tests pass on output** |
-| Docker image (rendered repo) | **builds and serves traffic** — `/health` 200, runs as non-root `app` |
-| Time for a reviewer to verify everything | **< 2 minutes**: `npm ci && npm test && npm run test:terraform` |
+- Portal click → signed, working repo: under 15 minutes
+- Generated services with Cosign signing: it lives in the template
+- Generated services with catalog ownership: rendered, never hand-written
+- Reusable Terraform modules (validated + tested): 2 — `service-baseline`, `observability-baseline`
+- Template render test (offline): 19 files rendered, lint + 3 unit tests pass on output
+- Docker image (rendered repo): builds and serves traffic — `/health` 200, runs as non-root `app`
+- Offline tests need zero cloud credentials
 
-## 7. Future improvements / known limitations
+## 7. Notes
 
-- **Docker image not built in CI of this repo** — the Dockerfile was verified
-  locally instead (builds on `node:24-alpine`, serves `/health` as non-root,
-  HEALTHCHECK passes on the rendered repo); add a build check here once this
-  repo has its own CI.
-- **No second template (Python)** — structure makes it mechanical to add;
-  one template is proven first.
-- **Argo Application must be applied once** (or moved to an app-of-apps
-  repo) — not auto-created by the template.
-- **Signing verification at admission** — the Kyverno policy checks labels,
-  not signatures; a Kyverno `ImageValidatingPolicy` is the natural next step.
-- **Terraform not invoked by the template** — resources provision when the
-  consumer runs `apply` (decision log §3 explains why).
-- **Backstage runs as guest auth** — swap for GitHub auth before any shared
-  deployment.
+- **Docker image not built in CI of this repo** — the Dockerfile was verified locally (builds on `node:24-alpine`, serves `/health` as non-root, HEALTHCHECK passes on the rendered repo); add a build check here once this repo has its own CI.
+- **No second template (Python)** — structure makes it mechanical to add; one template is proven first.
+- **Argo Application must be applied once** (or moved to an app-of-apps repo) — not auto-created by the template.
+- **Signing verification at admission** — the Kyverno policy checks labels, not signatures; a Kyverno `ImageValidatingPolicy` is the natural next step.
+- **Terraform not invoked by the template** — resources provision when the consumer runs `apply` (decision log explains why).
+- **Backstage runs as guest auth** — swap for GitHub auth before any shared deployment.
 
 ## 8. Demo
 
