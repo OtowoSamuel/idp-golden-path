@@ -288,6 +288,53 @@ If DNS is slow on the LoadBalancer, retry after ~60s. Screenshot examples live i
 
 ---
 
+## Step 12 — Auto-discovery with ApplicationSet
+
+Instead of manually applying each service's Argo CD Application, use an
+ApplicationSet that discovers services automatically from this repo.
+
+**How it works:**
+
+1. The scaffolder tags every new repo with the `golden-path` GitHub topic
+   (`addTopics` in the publish step)
+2. An ApplicationSet watches `services/` directories in this repo
+3. Each `services/<name>/` directory maps to a GitHub repo `OtowoSamuel/<name>`
+4. Adding a directory + pushing = auto-deployed service
+
+**Setup:**
+
+```bash
+# 1. Create the GitHub token secret (one-time)
+export GITHUB_TOKEN=$(gh auth token)
+envsubst < argocd/github-token-secret.yaml | kubectl apply -f -
+
+# 2. Apply the ApplicationSet
+kubectl apply -f argocd/applicationset.yaml
+
+# 3. For each existing service, add its directory
+mkdir -p services/payments-api
+echo "repo: payments-api" > services/payments-api/service.yaml
+git add services/ && git commit -m "Register payments-api" && git push
+```
+
+**To onboard a new service:**
+
+```bash
+# After scaffolding via Backstage:
+mkdir -p services/<service-name>
+echo "repo: <service-name>" > services/<service-name>/service.yaml
+git add services/ && git commit -m "Register <service-name>" && git push
+# Argo CD picks it up within ~3 minutes (or force refresh)
+```
+
+**Gate**: `kubectl get applications -n argocd` shows every service under
+`services/`, all Synced + Healthy. New directories appear automatically after push.
+
+**Note**: The `scmProvider` GitHub generator only works with orgs, not user
+accounts. The git-based generator used here works with any account.
+
+---
+
 ## Verification cheat sheet
 
 | Stage | Command | Pass looks like |

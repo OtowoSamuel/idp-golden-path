@@ -74,6 +74,7 @@ spec:
         defaultBranch: main
         repoVisibility: private
         sourcePath: ./source
+        addTopics: golden-path
 
     - id: register
       name: Register in catalog

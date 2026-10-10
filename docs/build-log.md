@@ -367,3 +367,47 @@ What’s in the repo at this point:
 - No CI workflow in *this* repo yet (Docker verified locally instead)
 - Second template (Python), `ImageValidatingPolicy`, GitHub auth:
   deliberate scope cuts — rationale in `docs/decision-log.md` §8
+
+---
+
+## Phase 8 — Live testing & auto-discovery
+
+Real user testing on the live stack surfaced three more issues, all invisible to the repo's tests because they only appear when Backstage, GitHub, and Argo CD interact for real.
+
+### Issue 38 — Kyverno blocked the Argo CD upgrade
+
+Upgrading Argo CD v3.2.1 → v3.5.4 failed: our own `kyverno-require-labels.yaml` policy denied the argocd namespace pods (they lack the required labels). Fixed by adding `matchConditions` namespace exemptions for `argocd`, `kyverno`, and `kube-system` — platform infrastructure shouldn't be blocked by its own admission policy.
+
+### Issue 39 — `allowedHosts` rejected by current scaffolder
+
+The `publish:github` action input `allowedHosts: ['github.com']` caused a validation error with the current `@backstage/plugin-scaffolder-backend`. The field only belongs on the `RepoUrlPicker` UI component (line 51), not the action input. Removed from the publish step.
+
+### Issue 40 — No auto-discovery: every service needed a manual `kubectl apply`
+
+Initially, each scaffolded service required manually applying its `deploy/argocd/application-dev.yaml` to the cluster. The skeleton still ships this file (useful for standalone use), but the live cluster now uses an **ApplicationSet** instead.
+
+**What was tried:**
+
+1. **`scmProvider.github` generator** — failed with 404 because `OtowoSamuel` is a user account, not a GitHub org. The generator hardcodes `/orgs/<org>/repos`; user accounts need `/users/<user>/repos`. No `user` field exists in the CRD.
+
+2. **`git` generator** (chosen) — watches `services/*` directories in this repo. Each directory name maps to `github.com/OtowoSamuel/<name>`. Works with any account type. The `services/<name>/` directory needs at least one real file (not just `.gitkeep`) for the generator to detect it.
+
+**How onboarding works now:**
+
+```bash
+# After scaffolding via Backstage (repo gets 'golden-path' topic automatically):
+mkdir -p services/<name>
+echo "repo: <name>" > services/<name>/service.yaml
+git add services/ && git commit -m "Register <name>" && git push
+# Argo CD discovers it within ~3 minutes
+```
+
+The `addTopics: golden-path` input on `publish:github` tags new repos automatically. The topic isn't strictly required by the git generator (it uses directory names), but it's good hygiene and enables future scmProvider use if the account converts to an org.
+
+### Issue 41 — Repo-server cache held stale directory list
+
+After pushing the `services/` directories, the git generator still reported "generated 0 applications". The argocd-repo-server caches git clones; deleting the pod (`kubectl delete pod -l app.kubernetes.io/name=argocd-repo-server`) forced a fresh clone and the generator picked up the directories immediately.
+
+### User-error note — wrong owner cascades
+
+Typing `Otowo` instead of `OtowoSamuel` during scaffolding propagated through the template: the GitHub repo, the GHCR image path (`ghcr.io/otowo/test-service`), and the Argo CD Application repoURL all pointed at the wrong account. The `OwnerPicker` UI field pulls from the catalog, but the `repoUrl` parameter's owner is free-text from the `RepoUrlPicker` — users can still mistype it. Not a template bug, but worth documenting.

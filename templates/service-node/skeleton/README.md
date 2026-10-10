@@ -32,8 +32,10 @@ npm run dev
 ## Delivery
 
 - CI (`.github/workflows/ci.yaml`): lint → test → build → **Cosign keyless sign** → push to GHCR.
-- GitOps: Argo CD `Application` lives in `deploy/argocd/`. Apply it once (or
-  reference it from an app-of-apps repo); Argo then syncs `deploy/overlays/dev`.
+- GitOps: Argo CD `Application` lives in `deploy/argocd/`. Either apply it
+  directly (`kubectl apply -f deploy/argocd/`) or, if using the platform's
+  ApplicationSet, add a `services/<name>/` directory to the idp-golden-path
+  repo — the ApplicationSet auto-discovers it.
 - Images are signed at push time — admission controllers can verify with
   `cosign verify` before scheduling pods.
 

@@ -2,6 +2,17 @@
 
 Rationale for the choices made while building this Internal Developer Platform starter. Newest first.
 
+## 0. ApplicationSet with git generator over scmProvider or manual apply
+
+Decision: Use an Argo CD ApplicationSet with a `git` generator that watches `services/*` directories in this repo, instead of `scmProvider.github` or manual `kubectl apply` per service.
+
+Why:
+- **Manual apply doesn't scale** — every new service needs a cluster-side action, which defeats the "golden path" promise.
+- **`scmProvider.github` requires a GitHub org** — it hardcodes `/orgs/<org>/repos`; user accounts return 404. No `user` field exists in the CRD.
+- **Git generator works with any account type** — it scans directories, not the GitHub API. Each `services/<name>/` directory maps to `github.com/<owner>/<name>`.
+
+Trade-off: Someone must create the `services/<name>/` directory and push. This is a deliberate friction point — it means deploying to the cluster is an explicit, reviewable git commit, not an automatic side effect of scaffolding. The `golden-path` topic is also added by the scaffolder for hygiene and future org migration.
+
 ## 1. Pin every dependency to current stable (audited Oct 2026)
 
 All external versions pinned to current stable as of October 2026: Node 24 (Active LTS), GitHub Actions `checkout@v7` / `setup-node@v7` / `docker/*@v7|v4` / `cosign-installer@v4` — all SHA-pinned to the release commit — plus Cosign v3, AWS provider `~> 6.0`, Terraform `>= 1.7`, ESLint 10 — and the Kyverno policy written as a CEL `ValidatingPolicy` (`policies.kyverno.io/v1`), not the deprecated `kyverno.io/v1 ClusterPolicy`.

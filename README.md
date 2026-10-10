@@ -70,15 +70,15 @@ idp-golden-path/
 3. **Step 1 — render**: `fetch:template` renders `skeleton/` with the form
    values (`service_name`, `owner`, `destination`, `team_label`). Every file
    and filename is templated.
-4. **Step 2 — publish**: `publish:github` creates the private repo and pushes
-   the rendered tree to `main`.
+4. **Step 2 — publish**: `publish:github` creates the private repo, pushes
+   the rendered tree to `main`, and tags it with the `golden-path` topic.
 5. **Step 3 — register**: `catalog:register` reads `catalog-info.yaml` from
    the new repo — the service appears in the catalog with owner, pipeline
    link, and repo link.
 6. The push triggers `.github/workflows/ci.yaml`:
    **lint → test → build → Cosign keyless sign → verify → push to GHCR**.
-7. `deploy/argocd/application-dev.yaml` points Argo CD at
-   `deploy/overlays/dev`; Argo syncs it into the cluster.
+7. Add a `services/<name>/` directory to this repo and push — the
+   **ApplicationSet** auto-discovers it and creates the Argo CD Application.
 
 What the generated repo already contains:
 
