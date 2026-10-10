@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: golden-path-services
+  namespace: argocd
+spec:
+  goTemplate: false
+  generators:
+    - git:
+        repoURL: https://github.com/OtowoSamuel/idp-golden-path.git
+        revision: main
+        directories:
+          - path: services/*
+  template:
+    metadata:
+      name: '{{path.basename}}-dev'
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/OtowoSamuel/{{path.basename}}.git'
+        targetRevision: main
+        path: deploy/overlays/dev
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: dev
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
