@@ -25,9 +25,9 @@ Pins are re-audited each quarter instead of floating on `@latest`, and CI is the
 
 Decision: Backstage (open-source).
 
-Why: It's what job postings discuss by name; the Software Template + catalog model is the pattern hiring managers recognize. Port is faster to start but the learning signal ("I built the portal") is weaker, and Backstage runs fine on a laptop.
+Why: It's the most widely adopted developer portal standard — the Software Template + catalog model is what most platform teams converge on. Port is faster to start but Backstage has a larger ecosystem, more plugins, and runs fine on a laptop.
 
-Trade-off accepted: Backstage setup (app-config, auth, plugins) costs several days up front. Accepted because portal setup *is* part of the demonstrated skill.
+Trade-off accepted: Backstage setup (app-config, auth, plugins) costs several days up front. Accepted because the setup itself is part of building a real platform, not just a demo.
 
 ## 3. Template generates a repo; it does not orchestrate infrastructure
 

@@ -16,8 +16,8 @@ The result is inconsistency, security gaps, and slow time-to-first-deploy.
 - Platform / DevOps teams that need a "golden path" — one approved way to
   create a service that already has the right security and delivery defaults.
 - Developers who want self-service instead of a ticket queue.
-- Hiring managers evaluating whether a candidate can build the platform
-  *other engineers use*, not just deploy to it.
+- Anyone learning how an IDP fits together — every piece is small, documented,
+  and rebuildable from the guide.
 
 ## 2. Architecture
 
