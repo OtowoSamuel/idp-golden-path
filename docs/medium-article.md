@@ -20,6 +20,11 @@ PUBLISHING CHECKLIST (Medium doesn't import local images — upload manually):
 15. assets/screenshots/live/live-cluster-runtime.png → cluster runtime with deployed image
 16. assets/screenshots/live/live-backstage-create.png → Backstage create → template card
 17. assets/screenshots/live/live-backstage-catalog.png → catalog ingests generated payments-api
+18. assets/screenshots/live/live-cloudwatch-alarms.png → CloudWatch alarms list (5xx alarm OK)
+19. assets/screenshots/live/live-cloudwatch-alarm-detail.png → alarm detail: threshold, metric, state
+20. assets/screenshots/live/live-cloudwatch-logs.png → CloudWatch log groups for services
+21. assets/screenshots/live/live-cloudwatch-dashboard.png → CloudWatch dashboard created via Terraform
+22. assets/screenshots/live/live-cloudwatch-overview.png → combined: alarms + logs + dashboard
 -->
 
 *Every platform team eventually writes the same onboarding doc: "create a repo, add a Dockerfile, wire up CI, add these labels…" — and every new service ignores half of it. I built a starter that turns that doc into a portal click.*
