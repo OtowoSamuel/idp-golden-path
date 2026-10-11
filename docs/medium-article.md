@@ -98,6 +98,18 @@ And yes, it's written as a Kubernetes-native **CEL `ValidatingPolicy`** — more
 
 The OpenTelemetry SDK initializes **only** if `OTEL_EXPORTER_OTLP_ENDPOINT` is set; otherwise it logs "tracing disabled" and the server runs. A generated service must start with zero external dependencies. The wiring, labels, and Prometheus annotations are all there — the hook exists, you plug in the collector when you have one.
 
+The Terraform `observability-baseline` module provisions the CloudWatch side: a log group (`/service/<name>/<env>`) and a 5xx alarm on the load balancer. Both are created per-service, tagged, and ready before the first pod starts.
+
+<!-- INSERT assets/screenshots/live/live-cloudwatch-overview.png HERE -->
+![CloudWatch: 5xx alarm in OK state, service log group, dashboard](assets/screenshots/live/live-cloudwatch-overview.png)
+
+The alarm watches `HTTPCode_Target_5XX_Count` on the ALB — threshold 10, over two 5-minute periods. It's the cheapest possible safety net: no custom metrics, no agent, just the one number that means "something is broken."
+
+<!-- INSERT assets/screenshots/live/live-cloudwatch-alarm-detail.png HERE -->
+![Alarm detail: threshold, metric, state — provisioned by Terraform, not hand-created](assets/screenshots/live/live-cloudwatch-alarm-detail.png)
+
+And because the app exposes `/metrics` (Prometheus format) and ships OTel hooks from line one, plugging in a real collector later means setting one environment variable — not rewriting the service.
+
 <!-- INSERT assets/screenshots/service-health.png HERE -->
 ![Generated service running: /health responds on first boot](assets/screenshots/service-health.png)
 
