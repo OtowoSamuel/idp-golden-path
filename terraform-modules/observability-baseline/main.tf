@@ -19,7 +19,7 @@ resource "aws_cloudwatch_metric_alarm" "http_5xx" {
 
   alarm_name          = "${var.service_name}-${var.environment}-http-5xx"
   alarm_description   = "5xx errors above threshold for ${var.service_name}"
-  namespace           = var.load_balancer_type == "alb" ? "AWS/ApplicationELB" : "AWS/EC2"
+  namespace           = var.load_balancer_type == "alb" ? "AWS/ApplicationELB" : "AWS/ELB"
   metric_name         = "HTTPCode_Target_5XX_Count"
   statistic           = "Sum"
   period              = 300

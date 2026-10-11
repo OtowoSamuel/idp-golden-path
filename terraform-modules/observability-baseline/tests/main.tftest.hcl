@@ -57,8 +57,8 @@ run "alarm_created_when_enabled" {
   }
 
   assert {
-    condition     = aws_cloudwatch_metric_alarm.http_5xx[0].namespace == "AWS/EC2"
-    error_message = "Classic ELB (EKS default) must use AWS/EC2 namespace"
+    condition     = aws_cloudwatch_metric_alarm.http_5xx[0].namespace == "AWS/ELB"
+    error_message = "Classic ELB must use AWS/ELB namespace"
   }
 
   assert {
