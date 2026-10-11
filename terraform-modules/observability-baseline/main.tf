@@ -15,11 +15,11 @@ resource "aws_cloudwatch_log_group" "this" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "http_5xx" {
-  count = var.alarm_enabled ? 1 : 0
+  count = var.alarm_enabled && var.load_balancer_name != null ? 1 : 0
 
   alarm_name          = "${var.service_name}-${var.environment}-http-5xx"
   alarm_description   = "5xx errors above threshold for ${var.service_name}"
-  namespace           = "AWS/ApplicationELB"
+  namespace           = var.load_balancer_type == "alb" ? "AWS/ApplicationELB" : "AWS/EC2"
   metric_name         = "HTTPCode_Target_5XX_Count"
   statistic           = "Sum"
   period              = 300
@@ -28,8 +28,10 @@ resource "aws_cloudwatch_metric_alarm" "http_5xx" {
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "notBreaching"
 
-  dimensions = {
-    Service = var.service_name
+  dimensions = var.load_balancer_type == "alb" ? {
+    LoadBalancer = var.load_balancer_name
+    } : {
+    LoadBalancerName = var.load_balancer_name
   }
 
   alarm_actions = var.alarm_topic_arn != null ? [var.alarm_topic_arn] : []

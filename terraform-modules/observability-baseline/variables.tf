@@ -48,6 +48,23 @@ variable "alarm_topic_arn" {
   default     = null
 }
 
+variable "load_balancer_name" {
+  description = "Name of the load balancer to monitor (e.g. from kubectl get svc). Required when alarm_enabled=true."
+  type        = string
+  default     = null
+}
+
+variable "load_balancer_type" {
+  description = "LB type: 'classic' (EKS default, AWS/EC2 namespace) or 'alb' (AWS/ApplicationELB namespace)"
+  type        = string
+  default     = "classic"
+
+  validation {
+    condition     = contains(["classic", "alb"], var.load_balancer_type)
+    error_message = "load_balancer_type must be 'classic' or 'alb'."
+  }
+}
+
 variable "tags" {
   description = "Additional tags applied to all resources"
   type        = map(string)
