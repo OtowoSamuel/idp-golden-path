@@ -2,36 +2,40 @@
 
 ```mermaid
 flowchart LR
-    subgraph portal["Developer Portal"]
-        dev[Developer] --> ui[Backstage UI]
-        ui -->|"Create service form"| tpl["Software Template<br/>service-node/template.yaml"]
-        tpl -->|"register"| cat[Software Catalog<br/>owner · links · lifecycle]
+    subgraph platform["Developer Machine + GitHub"]
+        subgraph portal["Developer Portal"]
+            dev[Developer] --> ui[Backstage UI]
+            ui -->|"Create service form"| tpl["Software Template<br/>service-node/template.yaml"]
+            tpl -->|"register"| cat[Software Catalog<br/>owner · links · lifecycle]
+        end
+
+        subgraph cicd["CI/CD"]
+            tpl -->|"1. render"| ws[(Workspace)]
+            tpl -->|"2. publish"| gh[GitHub repo<br/>CI + Dockerfile + kustomize + catalog-info]
+            gh -->|"push to main"| ci["GitHub Actions<br/>lint → test → build → cosign sign → push"]
+            ci -->|image| ghcr[(GHCR<br/>signed)]
+        end
     end
 
-    subgraph cicd["CI/CD"]
-        tpl -->|"1. render"| ws[(Workspace)]
-        tpl -->|"2. publish"| gh[GitHub repo<br/>CI + Dockerfile + kustomize + catalog-info]
-        gh -->|"push to main"| ci["GitHub Actions<br/>lint → test → build → cosign sign → push"]
-        ci -->|image| ghcr[(GHCR<br/>signed)]
-    end
+    subgraph aws["AWS Account"]
+        subgraph runtime["Runtime"]
+            gh -->|manifests| gitops[GitOps folder<br/>deploy/overlays/dev]
+            gitops --> argo[Argo CD Application]
+            argo -->|"sync"| k8s[(Kubernetes)]
+            ghcr -->|"pulls image"| k8s
+            k8s --> pod[App Pod]
+        end
 
-    subgraph runtime["Runtime"]
-        gh -->|manifests| gitops[GitOps folder<br/>deploy/overlays/dev]
-        gitops --> argo[Argo CD Application]
-        argo -->|"sync"| k8s[(Kubernetes)]
-        ghcr -->|"pulls image"| k8s
-        k8s --> pod[App Pod]
-    end
+        subgraph controls["Controls"]
+            kyverno["Kyverno ValidatingPolicy<br/>labels enforced"] -.->|validation| pod
+            pod -.->|"scrape /metrics"| prom["Prometheus metrics<br/>(wiring only)"]
+            pod -.->|"OTLP traces"| otel["OTel hooks<br/>(dormant by default)"]
+        end
 
-    subgraph controls["Controls"]
-        kyverno["Kyverno ValidatingPolicy<br/>labels enforced"] -.->|validation| pod
-        pod -.->|"scrape /metrics"| prom["Prometheus metrics<br/>(wiring only)"]
-        pod -.->|"OTLP traces"| otel["OTel hooks<br/>(dormant by default)"]
-    end
-
-    subgraph observability["Observability"]
-        tf1["Terraform<br/>service-baseline"] -.-> ghcr
-        tf2["Terraform<br/>observability-baseline"] -.->|"log group + 5xx alarm"| cw["CloudWatch"]
+        subgraph observability["Observability"]
+            tf1["Terraform<br/>service-baseline"] -.-> ghcr
+            tf2["Terraform<br/>observability-baseline"] -.->|"log group + 5xx alarm"| cw["CloudWatch"]
+        end
     end
 ```
 
