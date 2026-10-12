@@ -114,14 +114,15 @@ The short version:
 - Docker image (rendered repo): builds and serves traffic — `/health` 200, runs as non-root `app`
 - Offline tests need zero cloud credentials
 
-## 7. Notes
+## 7. What it doesn't do yet
 
-- **Docker image not built in CI of this repo** — the Dockerfile was verified locally (builds on `node:24-alpine`, serves `/health` as non-root, HEALTHCHECK passes on the rendered repo); add a build check here once this repo has its own CI.
-- **No second template (Python)** — structure makes it mechanical to add; one template is proven first.
-- **Argo Application must be applied once** (or moved to an app-of-apps repo) — not auto-created by the template.
-- **Signing verification at admission** — the Kyverno policy checks labels, not signatures; a Kyverno `ImageValidatingPolicy` is the natural next step.
-- **Terraform not invoked by the template** — resources provision when the consumer runs `apply` (decision log explains why).
-- **Backstage runs as guest auth** — swap for GitHub auth before any shared deployment.
+**Signatures are verified in CI, not at the cluster.** Kyverno enforces ownership labels but doesn't verify image signatures — an unsigned image applied by hand could still be admitted. Next step: an `ImageValidatingPolicy` pinned to the repo's workflow identity.
+
+**One environment.** Only the `dev` overlay exists. Promotion would work by adding `overlays/staging/` and `overlays/prod/` to the skeleton, then registering additional Argo CD Applications (or extending the ApplicationSet) that point at those paths. The kustomize structure already supports it — the overlays just don't exist yet.
+
+**Runtime and cost.** The live demo ran on EKS (`golden-path-demo`, us-east-1) with 2× t3.medium nodes — roughly **$0.22/hr** (~$160/month if left running). Argo CD, Kyverno, and the app pods all fit in that footprint. To shut it down: `eksctl scale nodegroup --cluster golden-path-demo --name workers --nodes 0` scales compute to zero while the control plane (~$0.10/hr) keeps the cluster definition. Full teardown: delete the node group, then the cluster (~10 minutes).
+
+**Backstage uses guest auth.** Fine for a laptop demo; swap for GitHub or OIDC auth before any shared deployment.
 
 ## 8. Demo
 
