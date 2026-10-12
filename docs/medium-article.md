@@ -158,14 +158,12 @@ The fix, explicit parameter expansion (`repo="${spec%% *}"`), is elementary. The
 
 ## The results
 
-| Metric | Value |
-|---|---|
-| Portal click → green pipeline | **~2 minutes** (30s scaffold + 1m 4s CI) |
-| Generated services with keyless Cosign signing | **100%** — it lives in the template |
-| Generated services with catalog ownership | **100%** — rendered, never hand-written |
-| Reusable Terraform modules (tested, mocked) | **2**, 8/8 tests passing |
-| Credentials needed to run every test | **0** |
-| Template render test | 19 files, lint + unit tests green on output |
+- **Portal click → green pipeline:** ~2 minutes (30s scaffold + 1m 4s CI)
+- **Generated services with keyless Cosign signing:** 100% — it lives in the template
+- **Generated services with catalog ownership:** 100% — rendered, never hand-written
+- **Reusable Terraform modules (tested, mocked):** 2, 8/8 tests passing
+- **Credentials needed to run every test:** 0
+- **Template render test:** 19 files, lint + unit tests green on output
 
 The pipeline that ran on that push: lint and unit tests first, then build, Cosign keyless sign, and verify. 1m 4s end to end.
 
